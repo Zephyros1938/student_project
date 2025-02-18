@@ -1,8 +1,6 @@
 import tsapp, tsappMod
 import random
 
-#tsapp.GraphicsWindow.finish_frame = exec("print(\"test\")");
-
 display = tsapp.GraphicsWindow(width=1280,height=720,background_color=(255,0,0))
 
 p = tsappMod.PolygonalObject(
