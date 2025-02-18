@@ -1,13 +1,12 @@
-import tsappMod
+import tsapp, tsappMod
 import pygame
 import random
-from utilities import *
 
 #tsapp.GraphicsWindow.finish_frame = exec("print(\"test\")");
 
-display = tsappMod.GraphicsWindow(width=1280,height=720,background_color=(255,0,0))
+display = tsapp.GraphicsWindow(width=1280,height=720,background_color=(255,0,0))
 
-p = PolygonalObject(
+p = tsappMod.PolygonalObject(
     points=[
         [-128,-128],
         [128,-128],
@@ -16,10 +15,10 @@ p = PolygonalObject(
     ],
     color=(255,0,255),
     linewidth=0,
-    show_center=True)
+    show_center=True,
+    show_speed=True)
 
-display.add_polygonal_object(p)
-
+display.add_object(p)
 
 while display.is_running:
     if(tsapp.is_key_down(tsapp.K_LEFT)): p.x_speed -= 20
