@@ -10,7 +10,7 @@ p = tsappMod.PolygonalObject(
         [-128,-128],
         [128,-128],
         [128,128],
-        [-128,256]
+        [-128,128]
     ],
     color=(255,0,255),
     linewidth=0,
@@ -20,9 +20,10 @@ p = tsappMod.PolygonalObject(
 display.add_object(p)
 
 while display.is_running:
-    if(tsapp.is_key_down(tsapp.K_LEFT)): p.x_speed -= 20
-    if(tsapp.is_key_down(tsapp.K_RIGHT)): p.x_speed += 20
-    if(tsapp.is_key_down(tsapp.K_UP)): p.y_speed -= 20
-    if(tsapp.is_key_down(tsapp.K_DOWN)): p.y_speed += 20
+    if(tsapp.is_key_down(tsapp.K_p)): exit()
+    if(tsapp.is_key_down(tsapp.K_LEFT) or tsapp.is_key_down(tsapp.K_a)): p.x_speed -= 20
+    if(tsapp.is_key_down(tsapp.K_RIGHT) or tsapp.is_key_down(tsapp.K_d)): p.x_speed += 20
+    if(tsapp.is_key_down(tsapp.K_UP) or tsapp.is_key_down(tsapp.K_w)): p.y_speed -= 20
+    if(tsapp.is_key_down(tsapp.K_DOWN) or tsapp.is_key_down(tsapp.K_s)): p.y_speed += 20
 
     display.finish_frame()
