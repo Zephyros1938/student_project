@@ -1,18 +1,12 @@
+
 import tsapp;
 import pygame;
 
 class PolygonalObject(tsapp.GraphicalObject):
-    points : list[(int,int)]
-    color : (int, int, int)
-    linewidth : int
-    center_x: int
-    center_y: int
-    width_offset: int
-    height_offset: int
     show_center = False
     show_speed = False
 
-    def __init__(self, points: list[(int,int)], center = [0,0], color = (255,255,255), linewidth = 0, show_center = False, show_speed = False):
+    def __init__(self, points = [[0,0],[1,0],[0,1]], center = [0,0], color = (255,255,255), linewidth = 0, show_center = False, show_speed = False):
         super().__init__()
         self.points = points
         temp_center_x = 0
@@ -37,7 +31,7 @@ class PolygonalObject(tsapp.GraphicalObject):
         if(self.visible):
             pygame.draw.polygon(surface, self.color, temp_coord_list, self.linewidth)
         if(self.show_center):
-            pygame.draw.circle(surface=surface, color=(0,255,0), center=(self.center_x, self.center_y), radius=2)
+            pygame.draw.circle(surface, (0,255,0), (self.center_x, self.center_y), 2)
         if(self.show_speed):
             pygame.draw.line(surface=surface, color=(255,255,0), start_pos=(self.center_x,self.center_y), end_pos=(self.center_x + self.x_speed,self.center_y + self.y_speed), width=2)
         
