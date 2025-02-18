@@ -1,5 +1,4 @@
 import tsapp, tsappMod
-import pygame
 import random
 
 #tsapp.GraphicsWindow.finish_frame = exec("print(\"test\")");
