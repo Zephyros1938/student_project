@@ -175,6 +175,12 @@ class PolygonalObject(tsapp.GraphicalObject):
     def rotate_to(self, target):
         self.rotate_rad(Math.get_direction_towards_point(target, self.center))
     
+    def move_towards(self, target, speed):
+        target_direction = Math.get_direction_towards_point(target, self.center)
+        sx, sy = Math.get_vector_from_rad(target_direction)
+        self.x_speed -= sx * speed
+        self.y_speed -= sy * speed
+    
     @property
     def is_colliding_polygon(self, other_polygon):
         pass
@@ -214,5 +220,6 @@ class Math:
                 *math.cos(r)
             ) + a[1]
             )
+    @staticmethod
     def get_vector_from_rad(radians):
         return (math.cos(radians), math.sin(radians))
