@@ -4,6 +4,7 @@
 """
 import tsapp
 import pygame
+import math
 
 # Keys
 
@@ -115,41 +116,103 @@ class PolygonalObject(tsapp.GraphicalObject):
     show_speed : bool
         Flag to show the speed vector of the polygon.
     """
-    world_coord_list = []
+    _world_coord_list = []
+    current_angle_rad = 0
     
-    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, show_center=False, show_speed=False):
+    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, show_center=False, show_speed=False, show_direction = False):
         super().__init__()
-        self.points = points
-        temp_center_x = 0
-        temp_center_y = 0
-        for point in points:
-            temp_center_x += point[0]
-            temp_center_y += point[1]
-        self.width_offset = temp_center_x / len(points)
-        self.height_offset = temp_center_y / len(points)
+        if not (isinstance(points, list) and all(isinstance(item, list) for item in points)):   # checks if the 'points' variable is a list, 
+                                                                                                # and that it contains only tuples
+            raise TypeError("Points must be a list of 2x length lists.")
+        self.points = [v for v in points]
+        #print(len(points))
+        self.local_center_x = sum(v[0] for v in self.points) / len(points)
+        self.local_center_y = sum(v[1] for v in self.points) / len(points)
+        #self.local_center = (self.local_center_x, self.local_center_y)
         self.color = color
         self.linewidth = linewidth
         self.center_x = center[0]
         self.center_y = center[1]
         self.show_center = show_center
         self.show_speed = show_speed
+        self.show_direction = show_direction
+        self._world_coord_list = [(0,0)] * len(points)
+        self._update_world_coords()
     
     def _draw(self):
         surface = tsapp._get_window()._surface
         if(self.visible):
-            self.world_coord_list = []
-            for i in self.points:
-                self.world_coord_list.append((i[0] + (self.center_x), i[1] + (self.center_y)))
-            pygame.draw.polygon(surface, self.color, self.world_coord_list, self.linewidth)
+            pygame.draw.polygon(surface, self.color, self._world_coord_list, self.linewidth)
         if(self.show_center):
             pygame.draw.circle(surface, (0,255,0), (self.center_x, self.center_y), 2)
         if(self.show_speed):
             pygame.draw.line(surface=surface, color=(255,255,0), start_pos=(self.center_x,self.center_y), end_pos=(self.center_x + self.x_speed,self.center_y + self.y_speed), width=2)
-        
+        if(self.show_direction):
+            pygame.draw.line(
+                surface=surface,
+                color=(0,255,255),
+                start_pos=self.center,
+                end_pos=Math.rotate_point_rad((self.center_x-250, self.center_y), self.center, self.current_angle_rad),
+                width=2
+            )
+
     def _update(self, delta_time):
         x_speed, y_speed = self.speed
         self.center_x += (x_speed / 1000) * delta_time
         self.center_y += (y_speed / 1000) * delta_time
+        self._update_world_coords()
     
+    def _update_world_coords(self):
+        for i in range(len(self.points)):
+            self._world_coord_list[i] = (self.points[i][0] + self.center_x - self.local_center_x, self.points[i][1] + self.center_y - self.local_center_y)
+        #print(self.world_coord_list)
+    
+    def rotate_rad(self, radians):
+        for i in range(len(self.points)):
+            self.points[i] = Math.rotate_point_rad_compact(self.points[i], self.local_center, radians - self.current_angle_rad)
+        self.current_angle_rad = radians
+    
+    def rotate_to(self, target):
+        self.rotate_rad(Math.get_direction_towards_point(target, self.center))
+    
+    @property
     def is_colliding_polygon(self, other_polygon):
         pass
+    @property
+    def center(self):
+        return (self.center_x, self.center_y)
+    @property
+    def local_center(self):
+        return(self.local_center_x, self.local_center_y)
+
+class Math:
+    @staticmethod
+    def get_direction_towards_point(current,target):
+        return math.atan2(target[1] - current[1], target[0] - current[0])
+    @staticmethod
+    def rotate_point_rad(p1, pivot, radians):
+        s = math.sin(radians)
+        c = math.cos(radians)
+        p = p1
+        p = (p[0] - pivot[0], p[1] - pivot[1])
+        xnew = p[0] * c - p[1] * s
+        ynew = p[0] * s + p[1] * c
+        return (xnew + pivot[0], ynew + pivot[1])
+    @staticmethod
+    def rotate_point_rad_compact(p,a,r):
+        return (
+            (
+                (p[0]-a[0])
+                *math.cos(r)
+                -(p[1]-a[1])
+                *math.sin(r)
+            ) + a[0],
+            (
+                (p[0]-a[0])
+                *math.sin(r)
+                +(p[1]-a[1])
+                *math.cos(r)
+            ) + a[1]
+            )
+    def get_vector_from_rad(radians):
+        return (math.cos(radians), math.sin(radians))
