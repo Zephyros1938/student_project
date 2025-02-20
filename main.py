@@ -1,5 +1,4 @@
-import tsapp, tsappMod, pygame, math
-import random
+import tsapp, tsappMod, math
 
 display = tsappMod.Surface(width=1080 ,height=1080,background_color=(0,0,0))
 
@@ -31,7 +30,8 @@ p2 = tsappMod.PolygonalObject(
     linewidth=0,
     show_center=True,
     show_speed=True,
-    show_direction=True)
+    show_direction=True,
+    center=[display.width,display.height])
 
 tl = tsapp.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "EMPTY", (255, 255, 255))
 fps_meter =tsapp.TextLabel("CourierNew.ttf", 25, 0, 25, display.width ,"FPS_METER", (255, 255, 255))

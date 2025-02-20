@@ -89,8 +89,9 @@ class Surface(tsapp.GraphicsWindow):
     background_color : tuple
         The background color of the window.
     """
-    def __init__(self, width=1018, height=573, background_color=tsapp.WHITE):
-        super().__init__(width, height, background_color) 
+    def __init__(self, width=1018, height=573, background_color=tsapp.WHITE, title="tsapp window"):
+        super().__init__(width, height, background_color)
+        pygame.display.set_caption(title)
     
     def finish_frame(self):
         super().finish_frame()
