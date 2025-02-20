@@ -1,4 +1,5 @@
 import tsapp, tsappMod, math
+from tsappMod import Builtins as TSMConst
 
 display = tsappMod.Surface(width=1080 ,height=1080,background_color=(0,0,0))
 
@@ -43,41 +44,51 @@ display.add_object(fps_meter)
 display.add_object(p2)
 display.add_object(p)
 
-gui_update_increment = 0
-box_move_step = 0
+gui_update_tick = 0
+deceleration_tick = 0
 
 move_speed = 200
 enemy_move_speed = 200
 
 while display.is_running:
-    delta_time = display._clock.get_time() / 1000
-    #print(delta_time)
+    deltatime = display.deltatime
     mouse_pos = tsapp.get_mouse_position()
-    if(tsapp.is_key_down(tsappMod.K_ESCAPE)): exit()
+
+    if(tsapp.is_key_down(TSMConst.Special.K_ESCAPE)): exit()
     if(p.center_x>=display.width+20): p.center_x=0
     if(p.center_x<=-20): p.center_x = display.width
     if(p.center_y<=-20): p.center_y = display.height
     if(p.center_y>=display.height+20): p.center_y = 0
-    if(tsappMod.is_mouse_down(tsappMod.M_LEFT)):
-        p.move_towards(mouse_pos, move_speed * delta_time)
-    if(tsappMod.is_mouse_down(tsappMod.M_LEFT) or tsappMod.is_mouse_down(tsappMod.M_RIGHT)):
-        p.rotate_to(mouse_pos)
 
-    if(gui_update_increment>=600*delta_time):
-        tl.text = "X :" + str(int(p.center_x)) + " Y :" + str(int(p.center_y))
+    if(p2.center_x>=display.width+20): p2.center_x=0
+    if(p2.center_x<=-20): p2.center_x = display.width
+    if(p2.center_y<=-20): p2.center_y = display.height
+    if(p2.center_y>=display.height+20): p2.center_y = 0
+
+    
+    if(tsapp.is_key_down(tsapp.K_w)): p.move_forward(move_speed * deltatime)
+    if(tsapp.is_key_down(tsapp.K_s)): p.move_backward(move_speed * deltatime)
+    if(tsapp.is_key_down(tsapp.K_a)): p.move_left(move_speed * deltatime)
+    if(tsapp.is_key_down(tsapp.K_d)): p.move_right(move_speed * deltatime)
+
+    if(tsappMod.is_mouse_down(TSMConst.Mouse.M_RIGHT)): p.rotate_to(mouse_pos)
+
+    if(gui_update_tick>=display.seconds_passed(seconds=1)):
+        tl.text = "X :" + str(int(p.center_x)) + " Y :" + str(int(p.center_y)) + " R :" + str(p.current_angle_rad)
         fps_meter.text = "FPS: " + str(display._clock.get_fps())
-        gui_update_increment=0
-    if(box_move_step>=600*delta_time and not tsapp.is_mouse_down() and p.speed != (0,0)):
-        p.x_speed *= 0.75
-        p.y_speed *= 0.75
-        if(abs(p.x_speed)<=1 and abs(p.y_speed)<=1):
-            p.x_speed = 0
-            p.y_speed = 0
-        print(p.speed)
-        box_move_step=0
-    p2.move_towards(p.center, enemy_move_speed * delta_time)
+        gui_update_tick=0
+    if(deceleration_tick>=display.seconds_passed(600)):
+        if(not tsapp.is_mouse_down() and p.speed != (0,0)):
+            p.x_speed *= 0.75
+            p.y_speed *= 0.75
+            if(abs(p.x_speed)<=1 and abs(p.y_speed)<=1):
+                p.x_speed = 0
+                p.y_speed = 0
+        print(deceleration_tick, deltatime)
+        deceleration_tick=0
+    p2.move_towards(p.center, enemy_move_speed * deltatime)
     p2.rotate_to(p.center)
 
-    gui_update_increment+=1 * delta_time
-    box_move_step+=1 * delta_time
+    gui_update_tick+=1 * deltatime
+    deceleration_tick+=1 * deltatime
     display.finish_frame()
