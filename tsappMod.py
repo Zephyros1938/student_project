@@ -73,6 +73,7 @@ class PolygonalObject(tsapp.GraphicalObject):
         self.local_center_y = sum(v[1] for v in self.points) / len(points)
         #self.local_center = (self.local_center_x, self.local_center_y)
         self.color = color
+        self.color_inverse = (255-color[0], 255-color[1], 255-color[2])
         self.linewidth = linewidth
         self.center_x = center[0]
         self.center_y = center[1]
@@ -87,7 +88,7 @@ class PolygonalObject(tsapp.GraphicalObject):
         if(self.visible):
             pygame.draw.polygon(surface, self.color, self._world_coord_list, self.linewidth)
         if(self.show_center):
-            pygame.draw.circle(surface, (0,255,0), (self.center_x, self.center_y), 2)
+            pygame.draw.circle(surface, self.color_inverse, (self.center_x, self.center_y), 4)
         if(self.show_speed):
             pygame.draw.line(surface=surface, color=(255,255,0), start_pos=(self.center_x,self.center_y), end_pos=(self.center_x + self.x_speed,self.center_y + self.y_speed), width=2)
         if(self.show_direction):
