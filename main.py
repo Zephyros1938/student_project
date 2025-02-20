@@ -58,9 +58,10 @@ while display.is_running:
     if(p.center_x<=-20): p.center_x = display.width
     if(p.center_y<=-20): p.center_y = display.height
     if(p.center_y>=display.height+20): p.center_y = 0
-    if(tsapp.is_mouse_down()):
-        p.rotate_to(mouse_pos)
+    if(tsappMod.is_mouse_down(tsappMod.M_LEFT)):
         p.move_towards(mouse_pos, move_speed * delta_time)
+    if(tsappMod.is_mouse_down(tsappMod.M_LEFT) or tsappMod.is_mouse_down(tsappMod.M_RIGHT)):
+        p.rotate_to(mouse_pos)
 
     if(gui_update_increment>=600*delta_time):
         tl.text = "X :" + str(int(p.center_x)) + " Y :" + str(int(p.center_y))

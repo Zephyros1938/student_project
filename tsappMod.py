@@ -224,3 +224,10 @@ class Math:
     @staticmethod
     def get_vector_from_rad(radians):
         return (math.cos(radians), math.sin(radians))
+
+M_LEFT = 0
+M_MIDDLE = 1
+M_RIGHT = 2
+
+def is_mouse_down(mouse_button):
+    return pygame.mouse.get_pressed()[mouse_button]
