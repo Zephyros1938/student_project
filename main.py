@@ -19,7 +19,8 @@ p = tsappMod.PolygonalObject(
     linewidth=0,
     show_center=False,
     show_speed=True,
-    show_direction=True)
+    show_direction=True,
+    center=[display.width/2,display.height/2],)
 
 p2 = tsappMod.PolygonalObject(
     points=[
@@ -40,7 +41,7 @@ p2 = tsappMod.PolygonalObject(
 p2.center_x = display.width / 2
 p2.center_y = display.height / 2
 
-tl = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "EMPTY", (255, 255, 255))
+tl = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "EMPTY", (255, 255, 255), True)
 fps_meter =tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width ,"FPS_METER", (255, 255, 255))
 fps_meter.align = "right"
 display.framerate = -1
@@ -86,6 +87,7 @@ while display.is_running:
     if(GUI_UPDATE_TICK>=display.seconds_passed(seconds=1)):
         tl.text = "X :" + str(int(p.center_x)) + " Y :" + str(int(p.center_y))
         fps_meter.text = "FPS: " + str(display._clock.get_fps())
+        (display.origin_x, display.origin_y) = p.center
         GUI_UPDATE_TICK=0
     if(deceleration_tick>=display.seconds_passed(600)):
         if(

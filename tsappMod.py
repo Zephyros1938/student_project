@@ -35,7 +35,7 @@ class Surface(tsapp.GraphicsWindow):
         global _active_window
         _active_window = self
         tsapp._active_window = self
-        self.origin_x = 100
+        self.origin_x = 0
         self.origin_y = 0
         try:
             pygame.display.set_caption(title)
@@ -63,6 +63,7 @@ class Surface(tsapp.GraphicsWindow):
                 drawable_item._draw()
             else:
                 self._draw_list.remove(drawable_item)
+                drawable_item.destroy()
                 continue
             drawable_item._update(self._clock.get_time())
                 
@@ -93,6 +94,14 @@ class Surface(tsapp.GraphicsWindow):
 def _get_window():
     return _active_window
 
+class Camera2D:
+    def __init__(self,origin_x, origin_y):
+        self.origin_x = origin_x
+        self.origin_y = origin_y
+
+    @property
+    def origin(self):
+        return (self.origin_x, self.origin_y)
 # Missing Tsapp Objects
 
 class PolygonalObject(tsapp.GraphicalObject):
@@ -139,30 +148,30 @@ class PolygonalObject(tsapp.GraphicalObject):
         self._update_world_coords()
     
     def _draw(self):
-        surface = tsapp._get_window()._surface
+        surface = _active_window._surface
         if(self.visible):
             pygame.draw.polygon(surface, self.color, self._world_coord_list, self.linewidth)
         if(self.show_center):
-            pygame.draw.circle(surface, self.color_inverse, self.center, 4)
+            pygame.draw.circle(surface, self.color_inverse, self.world_center, 4)
         if(self.show_speed):
-            pygame.draw.line(surface=surface, color=(255,255,0), start_pos=self.center, end_pos=(self.center[0] + self.x_speed,self.center[1] + self.y_speed), width=2)
+            pygame.draw.line(surface=surface, color=(255,255,0), start_pos=self.world_center, end_pos=(self.world_center[0] + self.x_speed,self.world_center[1] + self.y_speed), width=2)
         if(self.show_direction):
             pygame.draw.line(
                 surface=surface,
                 color=(0,255,255),
-                start_pos=self.center,
-                end_pos=Math.rotate_point_rad((self.center[0]-250, self.center[1]), self.center, self.current_angle_rad),
+                start_pos=self.world_center,
+                end_pos=Math.rotate_point_rad((self.world_center[0]-250, self.world_center[1]), self.world_center, self.current_angle_rad),
                 width=2
             )
             pygame.draw.line(
                 surface=surface,
                 color=(0,255,0),
-                start_pos=self.center,
-                end_pos=Math.rotate_point_rad((self.center[0]-250, self.center[1]), self.center, self.right),
+                start_pos=self.world_center,
+                end_pos=Math.rotate_point_rad((self.world_center[0]-250, self.world_center[1]), self.world_center, self.right),
                 width=2
             )
         if(self.show_attraction):
-            pygame.draw.circle(surface=surface, color=(255,255,255), center=self.center, radius=self.attraction_radius, width=2)
+            pygame.draw.circle(surface=surface, color=(255,255,255), center=self.world_center, radius=self.attraction_radius, width=2)
         
 
     def _update(self, delta_time):
@@ -173,7 +182,7 @@ class PolygonalObject(tsapp.GraphicalObject):
     
     def _update_world_coords(self):
         for i in range(len(self.points)):
-            self._world_coord_list[i] = (self.points[i][0] + self.center[0] - self.local_center_x, self.points[i][1] + self.center[1] - self.local_center_y)
+            self._world_coord_list[i] = (self.points[i][0] + self.world_center[0] - self.local_center_x, self.points[i][1] + self.world_center[1] - self.local_center_y)
         #print(self.world_coord_list)
     
     def rotate_rad(self, radians):
@@ -182,10 +191,10 @@ class PolygonalObject(tsapp.GraphicalObject):
         self.current_angle_rad = radians
     
     def rotate_to(self, target):
-        self.rotate_rad(Math.get_direction_towards_point(target, self.center))
+        self.rotate_rad(Math.get_direction_towards_point(target, self.world_center))
     
     def move_towards(self, target, speed):
-        target_direction = Math.get_direction_towards_point(target, self.center)
+        target_direction = Math.get_direction_towards_point(target, self.world_center)
         sx, sy = Math.vector_from_rad(target_direction)
         self.x_speed -= sx * speed
         self.y_speed -= sy * speed
@@ -216,7 +225,11 @@ class PolygonalObject(tsapp.GraphicalObject):
         pass
     @property
     def center(self):
-        return (self.center_x - _active_window.origin[0], self.center_y - _active_window.origin[1])
+        return (self.center_x, self.center_y)
+    @property
+    def world_center(self):
+        #return self.center
+        return (self.center[0] - _active_window.origin[0], self.center[1] - _active_window.origin[1])
     @property
     def local_center(self):
         return(self.local_center_x, self.local_center_y)
