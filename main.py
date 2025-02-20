@@ -2,6 +2,7 @@ import tsapp, tsappMod, math
 from tsappMod import Builtins as TSMConst
 
 display = tsappMod.Surface(width=1080 ,height=1080,background_color=(0,0,0))
+camera = tsappMod.Camera2D(0,0)
 
 q = 32
 
@@ -35,7 +36,7 @@ p2 = tsappMod.PolygonalObject(
     show_speed=True,
     show_direction=True,
     center=[display.width,display.height],
-    attraction_radius=350 * display.aspect_ratio,
+    attraction_radius=1000 * display.aspect_ratio,
     show_attraction=True)
 
 p2.center_x = display.width / 2
@@ -78,16 +79,17 @@ while display.is_running:
     if(tsapp.is_key_down(tsapp.K_d)): p.move_right(move_speed * deltatime)
     if(tsappMod.is_mouse_down(TSMConst.Mouse.M_RIGHT)): p.rotate_to(mouse_pos)
 
-    if(tsapp.is_key_down(tsapp.K_UP)): display.origin_y -= (100 * deltatime)
-    if(tsapp.is_key_down(tsapp.K_DOWN)): display.origin_y += (100 * deltatime)
-    if(tsapp.is_key_down(tsapp.K_LEFT)): display.origin_x -= (100 * deltatime)
-    if(tsapp.is_key_down(tsapp.K_RIGHT)): display.origin_x += (100 * deltatime)
+    if(tsapp.is_key_down(tsapp.K_UP)): camera.origin_y -= (move_speed * deltatime)
+    if(tsapp.is_key_down(tsapp.K_DOWN)): camera.origin_y += (move_speed * deltatime)
+    if(tsapp.is_key_down(tsapp.K_LEFT)): camera.origin_x -= (move_speed * deltatime)
+    if(tsapp.is_key_down(tsapp.K_RIGHT)): camera.origin_x += (move_speed * deltatime)
+
+    if(p.world_center[1] < camera.origin_y): camera.origin_y -= (move_speed * deltatime)
     
 
     if(GUI_UPDATE_TICK>=display.seconds_passed(seconds=1)):
-        tl.text = "X :" + str(int(p.center_x)) + " Y :" + str(int(p.center_y))
+        tl.text = "X :" + str(int(p.center_x)) + " Y :" + str(int(p.center_y)) + " C :" + str(camera.origin)
         fps_meter.text = "FPS: " + str(display._clock.get_fps())
-        (display.origin_x, display.origin_y) = p.center
         GUI_UPDATE_TICK=0
     if(deceleration_tick>=display.seconds_passed(600)):
         if(
@@ -105,15 +107,15 @@ while display.is_running:
             if(abs(p.x_speed)<=1 and abs(p.y_speed)<=1):
                 p.x_speed = 0
                 p.y_speed = 0
-        if(p2.speed!=(0,0)):
+        if(p2.speed!=(0,0) and not tsappMod.Math.magnitude(p2.world_center, p.world_center)<p2.attraction_radius):
             p2.x_speed *= 0.75
             p2.y_speed *= 0.75
             if(abs(p2.x_speed)<=1 and abs(p2.y_speed)<=1):
                 p2.x_speed = 0
                 p2.y_speed = 0
         deceleration_tick=0
-    if(tsappMod.Math.magnitude(p2.center, p.center)<p2.attraction_radius):
-        p2.rotate_to(p.center)
+    if(tsappMod.Math.magnitude(p2.world_center, p.world_center)<p2.attraction_radius):
+        p2.rotate_to(p.world_center)
         p2.move_forward(enemy_move_speed * deltatime)
 
     GUI_UPDATE_TICK+=1 * deltatime

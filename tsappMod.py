@@ -15,6 +15,7 @@ except:
     print("Could not get pygame initialization state.")
 
 _active_window = None
+_active_Camera2D = None
 
 # Tsapp Overrides
 
@@ -35,8 +36,6 @@ class Surface(tsapp.GraphicsWindow):
         global _active_window
         _active_window = self
         tsapp._active_window = self
-        self.origin_x = 0
-        self.origin_y = 0
         try:
             pygame.display.set_caption(title)
         except:
@@ -87,17 +86,16 @@ class Surface(tsapp.GraphicsWindow):
     @property
     def aspect_ratio(self):
         return (self.width / self.height)
-    @property
-    def origin(self):
-        return (self.origin_x, self.origin_y)
 
 def _get_window():
     return _active_window
 
 class Camera2D:
-    def __init__(self,origin_x, origin_y):
+    def __init__(self,origin_x = 0, origin_y = 0):
         self.origin_x = origin_x
         self.origin_y = origin_y
+        global _active_Camera2D
+        _active_Camera2D = self
 
     @property
     def origin(self):
@@ -229,7 +227,7 @@ class PolygonalObject(tsapp.GraphicalObject):
     @property
     def world_center(self):
         #return self.center
-        return (self.center[0] - _active_window.origin[0], self.center[1] - _active_window.origin[1])
+        return (self.center[0] - _active_Camera2D.origin_x, self.center[1] - _active_Camera2D.origin_y)
     @property
     def local_center(self):
         return(self.local_center_x, self.local_center_y)
@@ -247,7 +245,7 @@ class TextLabel(tsapp.TextLabel):
             return
         surface = _active_window._surface
         if(not self.static):
-            start_x, y = (self.x - _active_window.origin_x, self.y - _active_window.origin_y)
+            start_x, y = (self.x -_active_Camera2D.origin_x, self.y -_active_Camera2D.origin_y)
         else:
             start_x, y = (self.x, self.y)
         draw_bounds = self.show_bounds
@@ -279,7 +277,7 @@ class TextLabel(tsapp.TextLabel):
         # NOTE: pygame.Rect does not support non-integer values for position
         if(not self.static):
             return pygame.Rect(int(self.x), int(self.y - self._font.get_sized_ascender()), int(self.width), int(self.height))
-        return pygame.Rect(int(self.x - _active_window.origin_x), int(self.y - self._font.get_sized_ascender() - _active_window.origin_y), int(self.width), int(self.height))
+        return pygame.Rect(int(self.x -_active_Camera2D.origin_x), int(self.y - self._font.get_sized_ascender() -_active_Camera2D.origin_y), int(self.width), int(self.height))
 
 class Math:
     @staticmethod
@@ -295,37 +293,24 @@ class Math:
         ynew = p[0] * s + p[1] * c
         return (xnew + pivot[0], ynew + pivot[1])
     @staticmethod
-    def rotate_point_rad_compact(p,a,r):
+    def rotate_point_rad_compact(p, a, r):
+        cos_r = math.cos(r)
+        sin_r = math.sin(r)
+        dx = p[0] - a[0]
+        dy = p[1] - a[1]
+        
         return (
-            (
-                (p[0]-a[0])
-                *math.cos(r)
-                -(p[1]-a[1])
-                *math.sin(r)
-            ) + a[0],
-            (
-                (p[0]-a[0])
-                *math.sin(r)
-                +(p[1]-a[1])
-                *math.cos(r)
-            ) + a[1]
-            )
+            dx * cos_r - dy * sin_r + a[0],
+            dx * sin_r + dy * cos_r + a[1]
+        )
+
     @staticmethod
     def vector_from_rad(radians):
-        return (math.cos(radians), math.sin(radians))
+        return math.cos(radians), math.sin(radians)
     
     @staticmethod
-    def magnitude(p1,p2):
-        return math.sqrt(
-            (
-                (p2[0]-p1[0])
-                **2
-            ) + 
-            (
-                (p2[1]-p1[1])
-                **2
-            )
-        )
+    def magnitude(p1, p2):
+        return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
     
     half_pi = math.pi/2
 
