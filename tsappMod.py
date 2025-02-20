@@ -2,15 +2,19 @@
     MADE BY ZEPHYROS1938 (zephyros@zephyros1938.org)
     FREE TO USE, WITH CREDIT.
 """
-import tsapp
-import pygame
 import math
+
+import pygame
+
+import tsapp
 
 # Keys
 try:
-    if(pygame.get_init()==False): pygame.init()
+    if(not pygame.get_init()): pygame.init()
 except:
     print("Could not get pygame initialization state.")
+
+_active_window = None
 
 # Tsapp Overrides
 
@@ -28,20 +32,66 @@ class Surface(tsapp.GraphicsWindow):
     """
     def __init__(self, width=1018, height=573, background_color=tsapp.WHITE, title="tsapp window"):
         super().__init__(width, height, background_color)
+        global _active_window
+        _active_window = self
+        tsapp._active_window = self
+        self.origin_x = 100
+        self.origin_y = 0
         try:
             pygame.display.set_caption(title)
         except:
             print("Could not set display name.")
     
     def finish_frame(self):
-        super().finish_frame()
+        """
+        Intended to be called once a frame while GraphicsWindow.is_running
+        Performs all the most common end-of-frame actions, including:
+         - tracking time
+         - updating the position and image of graphical objects
+         - removing destroyed objects
+         - flipping the screen
+         - checking for the "QUIT" event
+        """
+
+        # Track timing
+        self._clock.tick(self.framerate)
+
+        # Draw frame
+        self._surface.fill(self.background_color)
+        for drawable_item in self._draw_list:
+            if not drawable_item.destroyed:
+                drawable_item._draw()
+            else:
+                self._draw_list.remove(drawable_item)
+                continue
+            drawable_item._update(self._clock.get_time())
+                
+        pygame.display.flip()
+
+        # Capture events from the current frame
+        global _current_frame_event_list
+        _current_frame_event_list = pygame.event.get()
+
+        # Check for QUIT
+        if any(event.type == pygame.QUIT for event in _current_frame_event_list):
+            self.is_running = False
     
     def seconds_passed(self, seconds):
         return self.deltatime * seconds
     
+    
     @property
     def deltatime(self):
         return self._clock.get_time() / 1000
+    @property
+    def aspect_ratio(self):
+        return (self.width / self.height)
+    @property
+    def origin(self):
+        return (self.origin_x, self.origin_y)
+
+def _get_window():
+    return _active_window
 
 # Missing Tsapp Objects
 
@@ -67,16 +117,14 @@ class PolygonalObject(tsapp.GraphicalObject):
     _world_coord_list = []
     current_angle_rad = 0
     
-    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, show_center=False, show_speed=False, show_direction = False):
+    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, show_center=False, show_speed=False, show_direction = False, attraction_radius = 200, show_attraction = False):
         super().__init__()
         if not (isinstance(points, list) and all(isinstance(item, list) for item in points)):   # checks if the 'points' variable is a list, 
                                                                                                 # and that it contains only tuples
             raise TypeError("Points must be a list of 2x length lists.")
         self.points = [v for v in points]
-        #print(len(points))
         self.local_center_x = sum(v[0] for v in self.points) / len(points)
         self.local_center_y = sum(v[1] for v in self.points) / len(points)
-        #self.local_center = (self.local_center_x, self.local_center_y)
         self.color = color
         self.color_inverse = (255-color[0], 255-color[1], 255-color[2])
         self.linewidth = linewidth
@@ -85,6 +133,8 @@ class PolygonalObject(tsapp.GraphicalObject):
         self.show_center = show_center
         self.show_speed = show_speed
         self.show_direction = show_direction
+        self.show_attraction = show_attraction
+        self.attraction_radius = attraction_radius
         self._world_coord_list = [(0,0)] * len(points)
         self._update_world_coords()
     
@@ -93,24 +143,26 @@ class PolygonalObject(tsapp.GraphicalObject):
         if(self.visible):
             pygame.draw.polygon(surface, self.color, self._world_coord_list, self.linewidth)
         if(self.show_center):
-            pygame.draw.circle(surface, self.color_inverse, (self.center_x, self.center_y), 4)
+            pygame.draw.circle(surface, self.color_inverse, self.center, 4)
         if(self.show_speed):
-            pygame.draw.line(surface=surface, color=(255,255,0), start_pos=(self.center_x,self.center_y), end_pos=(self.center_x + self.x_speed,self.center_y + self.y_speed), width=2)
+            pygame.draw.line(surface=surface, color=(255,255,0), start_pos=self.center, end_pos=(self.center[0] + self.x_speed,self.center[1] + self.y_speed), width=2)
         if(self.show_direction):
             pygame.draw.line(
                 surface=surface,
                 color=(0,255,255),
                 start_pos=self.center,
-                end_pos=Math.rotate_point_rad((self.center_x-250, self.center_y), self.center, self.current_angle_rad),
+                end_pos=Math.rotate_point_rad((self.center[0]-250, self.center[1]), self.center, self.current_angle_rad),
                 width=2
             )
             pygame.draw.line(
                 surface=surface,
                 color=(0,255,0),
                 start_pos=self.center,
-                end_pos=Math.rotate_point_rad((self.center_x-250, self.center_y), self.center, self.right),
+                end_pos=Math.rotate_point_rad((self.center[0]-250, self.center[1]), self.center, self.right),
                 width=2
             )
+        if(self.show_attraction):
+            pygame.draw.circle(surface=surface, color=(255,255,255), center=self.center, radius=self.attraction_radius, width=2)
         
 
     def _update(self, delta_time):
@@ -121,7 +173,7 @@ class PolygonalObject(tsapp.GraphicalObject):
     
     def _update_world_coords(self):
         for i in range(len(self.points)):
-            self._world_coord_list[i] = (self.points[i][0] + self.center_x - self.local_center_x, self.points[i][1] + self.center_y - self.local_center_y)
+            self._world_coord_list[i] = (self.points[i][0] + self.center[0] - self.local_center_x, self.points[i][1] + self.center[1] - self.local_center_y)
         #print(self.world_coord_list)
     
     def rotate_rad(self, radians):
@@ -164,13 +216,57 @@ class PolygonalObject(tsapp.GraphicalObject):
         pass
     @property
     def center(self):
-        return (self.center_x, self.center_y)
+        return (self.center_x - _active_window.origin[0], self.center_y - _active_window.origin[1])
     @property
     def local_center(self):
         return(self.local_center_x, self.local_center_y)
     @property
     def right(self):
         return self.current_angle_rad + Math.half_pi
+
+class TextLabel(tsapp.TextLabel):
+    def __init__(self, font_name, font_size, x, y, width, text="", color=tsapp.BLACK, static=True):
+        super().__init__(font_name, font_size, x, y, width, text, color)
+        self.static = static
+    
+    def _draw(self):
+        if not self.visible or not self.text or not self._lines:
+            return
+        surface = _active_window._surface
+        if(not self.static):
+            start_x, y = (self.x - _active_window.origin_x, self.y - _active_window.origin_y)
+        else:
+            start_x, y = (self.x, self.y)
+        draw_bounds = self.show_bounds
+        bounds_color = self.bounds_color
+        for line in self._lines:
+            line_width = self._font.get_rect(line).width
+            if self.align == "left":
+                x = start_x
+            elif self.align == "right":
+                x = start_x + self.width - line_width
+            elif self.align == "center":
+                x = start_x + (self.width - line_width) * 0.5
+            else:
+                raise AssertionError(
+                    'Text Label alignment must be "left", "right", or "center": got "'  # noqa: E501
+                    + self.align
+                    + '"'
+                )
+            self._font.render_to(surface, (x, y), line)
+            if self.show_bounds:
+                pygame.draw.line(surface, bounds_color, (self.x, y), (self.x + self.width, y), width=1)
+            y += self._pixel_line_height
+
+        if draw_bounds:
+            pygame.draw.rect(surface, bounds_color, self.rect, width=2)
+    
+    @property
+    def rect(self):
+        # NOTE: pygame.Rect does not support non-integer values for position
+        if(not self.static):
+            return pygame.Rect(int(self.x), int(self.y - self._font.get_sized_ascender()), int(self.width), int(self.height))
+        return pygame.Rect(int(self.x - _active_window.origin_x), int(self.y - self._font.get_sized_ascender() - _active_window.origin_y), int(self.width), int(self.height))
 
 class Math:
     @staticmethod
