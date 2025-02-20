@@ -1,9 +1,11 @@
 import tsapp, tsappMod, pygame, math
 import random
 
-display = tsappMod.Surface(width=1280 ,height=720,background_color=(0,0,0))
+display = tsappMod.Surface(width=1080 ,height=1080,background_color=(0,0,0))
 
-l=32
+q = 32
+
+l=q * (display.width / display.height)
 l2 = l / 2
 
 p = tsappMod.PolygonalObject(
@@ -38,8 +40,8 @@ display.framerate = -1
 
 display.add_object(tl)
 display.add_object(fps_meter)
-display.add_object(p)
 display.add_object(p2)
+display.add_object(p)
 
 gui_update_increment = 0
 box_move_step = 0
@@ -49,13 +51,9 @@ enemy_move_speed = 200
 
 while display.is_running:
     delta_time = display._clock.get_time() / 1000
-    print(delta_time)
+    #print(delta_time)
     mouse_pos = tsapp.get_mouse_position()
     if(tsapp.is_key_down(tsappMod.K_ESCAPE)): exit()
-    if(tsapp.is_key_down(tsapp.K_LEFT) or tsapp.is_key_down(tsapp.K_a)): p.x_speed -= (move_speed * delta_time)
-    if(tsapp.is_key_down(tsapp.K_RIGHT) or tsapp.is_key_down(tsapp.K_d)): p.x_speed += (move_speed * delta_time)
-    if(tsapp.is_key_down(tsapp.K_UP) or tsapp.is_key_down(tsapp.K_w)): p.y_speed -= (move_speed * delta_time)
-    if(tsapp.is_key_down(tsapp.K_DOWN) or tsapp.is_key_down(tsapp.K_s)): p.y_speed += (move_speed * delta_time)
     if(p.center_x>=display.width+20): p.center_x=0
     if(p.center_x<=-20): p.center_x = display.width
     if(p.center_y<=-20): p.center_y = display.height
@@ -64,15 +62,21 @@ while display.is_running:
         p.rotate_to(mouse_pos)
         p.move_towards(mouse_pos, move_speed * delta_time)
 
-    if(gui_update_increment>=display.framerate):
+    if(gui_update_increment>=600*delta_time):
         tl.text = "X :" + str(int(p.center_x)) + " Y :" + str(int(p.center_y))
         fps_meter.text = "FPS: " + str(display._clock.get_fps())
         gui_update_increment=0
-    if(box_move_step>=display.framerate):
+    if(box_move_step>=600*delta_time and not tsapp.is_mouse_down() and p.speed != (0,0)):
+        p.x_speed *= 0.75
+        p.y_speed *= 0.75
+        if(abs(p.x_speed)<=1 and abs(p.y_speed)<=1):
+            p.x_speed = 0
+            p.y_speed = 0
+        print(p.speed)
         box_move_step=0
-        p2.speed = (((p.center_x - p2.center_x)) * delta_time, ((p.center_y - p2.center_y)) * delta_time)
+    p2.move_towards(p.center, enemy_move_speed * delta_time)
     p2.rotate_to(p.center)
 
-    gui_update_increment+=1
-    box_move_step+=1
+    gui_update_increment+=1 * delta_time
+    box_move_step+=1 * delta_time
     display.finish_frame()
