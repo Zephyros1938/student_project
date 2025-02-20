@@ -7,8 +7,10 @@ import pygame
 import math
 
 # Keys
-
-if(pygame.get_init()==False): pygame.init()
+try:
+    if(pygame.get_init()==False): pygame.init()
+except:
+    print("Could not get pygame initialization state.")
 
 # Tsapp Overrides
 
