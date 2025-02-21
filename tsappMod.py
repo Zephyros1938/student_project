@@ -97,6 +97,22 @@ class Camera2D:
         return (self.origin_x, self.origin_y)
 # Missing Tsapp Objects
 
+class PolygonalObjectDebugConfig:
+    def __init__(self, DEBUG_CENTER = False, DEBUG_SPEED = False, DEBUG_DIRECTION = False, DEBUG_ATTRACTION = False):
+        self.DEBUG_CENTER = DEBUG_CENTER
+        self.DEBUG_SPEED = DEBUG_SPEED
+        self.DEBUG_DIRECTION = DEBUG_DIRECTION
+        self.DEBUG_ATTRACTION = DEBUG_ATTRACTION
+
+class PolygonalObjectConfig:
+    def __init(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=[255,255,255], linewidth=0, attraction_radius=200, deceleration_factor = 0.75):
+        self.points = points
+        self.center = center
+        self.color = color
+        self.linewidth = linewidth,
+        self.attraction_radius = attraction_radius
+        self.deceleration_factor = deceleration_factor
+
 class PolygonalObject(tsapp.GraphicalObject):
     """
     A class to represent a polygonal graphical object.
@@ -119,7 +135,7 @@ class PolygonalObject(tsapp.GraphicalObject):
     _world_coord_list = []
     current_angle_rad = 0
     
-    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, show_center=False, show_speed=False, show_direction = False, attraction_radius = 200, show_attraction = False):
+    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, attraction_radius = 200, debug_config = PolygonalObjectDebugConfig()):
         super().__init__()
         if not (isinstance(points, list) and all(isinstance(item, list) for item in points)):
             raise TypeError("Points must be a list of 2x length lists.")
@@ -131,10 +147,7 @@ class PolygonalObject(tsapp.GraphicalObject):
         self.linewidth = linewidth
         self.center_x = center[0]
         self.center_y = center[1]
-        self.show_center = show_center
-        self.show_speed = show_speed
-        self.show_direction = show_direction
-        self.show_attraction = show_attraction
+        self.debug_config = debug_config
         self.attraction_radius = attraction_radius
         self._world_coord_list = [(0,0)] * len(points)
         self._update_world_coords()
@@ -144,11 +157,11 @@ class PolygonalObject(tsapp.GraphicalObject):
         world_center_x, world_center_y = self.world_center # cache for efficiency
         if(self.visible):
             pygame.draw.polygon(surface, self.color, self._world_coord_list, self.linewidth)
-        if(self.show_center):
+        if(self.debug_config.DEBUG_CENTER):
             pygame.draw.circle(surface, self.color_inverse, self.world_center, 4)
-        if(self.show_speed):
+        if(self.debug_config.DEBUG_SPEED):
             pygame.draw.line(surface=surface, color=(0,255,0), start_pos=self.world_center, end_pos=(world_center_x + self.x_speed,world_center_y + self.y_speed), width=2)
-        if(self.show_direction):
+        if(self.debug_config.DEBUG_DIRECTION):
             world_center_forward = (world_center_x-250, world_center_y)
             pygame.draw.line(
                 surface=surface,
@@ -164,7 +177,7 @@ class PolygonalObject(tsapp.GraphicalObject):
                 end_pos=Math.rotate_point_rad(world_center_forward, self.world_center, self.right),
                 width=2
             )
-        if(self.show_attraction):
+        if(self.debug_config.DEBUG_ATTRACTION):
             pygame.draw.circle(surface=surface, color=(255,255,255), center=self.world_center, radius=self.attraction_radius, width=2)
         
 
@@ -246,6 +259,7 @@ class PolygonalObject(tsapp.GraphicalObject):
     def right(self):
         return self.current_angle_rad + Math.half_pi
 
+
 class TextLabel(tsapp.TextLabel):
     def __init__(self, font_name, font_size, x, y, width, text="", color=tsapp.BLACK, static=True):
         super().__init__(font_name, font_size, x, y, width, text, color)
@@ -289,6 +303,10 @@ class TextLabel(tsapp.TextLabel):
         if(not self.static):
             return pygame.Rect(int(self.x), int(self.y - self._font.get_sized_ascender()), int(self.width), int(self.height))
         return pygame.Rect(int(self.x -_active_Camera2D.origin_x), int(self.y - self._font.get_sized_ascender() -_active_Camera2D.origin_y), int(self.width), int(self.height))
+
+class Entity(PolygonalObject):
+    def __init__():
+        super().__init__()
 
 class Math:
     @staticmethod

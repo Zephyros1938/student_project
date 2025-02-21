@@ -1,4 +1,4 @@
-import tsapp, tsappMod, math
+import tsapp, tsappMod, math, random
 from tsappMod import Builtins as TSMConst
 
 display = tsappMod.Surface(width=1280, height=720, background_color=(0, 0, 0))
@@ -16,10 +16,7 @@ p = tsappMod.PolygonalObject(
         [-((l * (math.sqrt(3) / 2)) - l2), 0]
     ],
     color=(255, 0, 255),
-    linewidth=0,
-    show_center=False,
-    show_speed=True,
-    show_direction=True,
+    linewidth=0
 )
 
 p2 = tsappMod.PolygonalObject(
@@ -31,19 +28,15 @@ p2 = tsappMod.PolygonalObject(
     ],
     color=(128, 0, 128),
     linewidth=0,
-    show_center=False,
-    show_speed=True,
-    show_direction=True,
     center=[display.width, display.height],
-    attraction_radius=1000 * display.aspect_ratio,
-    show_attraction=True
+    attraction_radius=100 * display.aspect_ratio
 )
 
 # Set initial centers
 p2.center_x = display.width / 2
 p2.center_y = display.height / 2
 p.center_x = display.width / 2
-p.center_y = display.width / 4
+p.center_y = display.height / 2
 
 player_info = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "EMPTY", (255, 255, 255))
 performance_info = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "FPS_METER", (255, 255, 255))
@@ -59,6 +52,7 @@ display.add_object(p)
 
 GUI_UPDATE_TICK = 0
 DECELERATION_TICK = 0
+WANDER_TICK = 0
 
 P_MOVE_SPEED = 200
 P2_MOVE_SPEED = 200
@@ -129,9 +123,18 @@ while display.is_running:
     if tsappMod.Math.magnitude(p2.world_center, p.world_center) < p2.attraction_radius:
         p2.rotate_to(p.world_center)
         p2.move_forward(P2_MOVE_SPEED * dt)
+    elif WANDER_TICK >= display.seconds_passed(240):
+        speed = random.randint(P2_MOVE_SPEED, P2_MOVE_SPEED * 10)
+        while (WANDER_TICK >= 0):
+            p2.rotate_rad(random.uniform(0, tsappMod.Math.tau))
+            p2.move_forward(speed * dt)
+            WANDER_TICK -= dt
+        WANDER_TICK = 0
+    
 
     # Increment timers using dt
     GUI_UPDATE_TICK += dt
     DECELERATION_TICK += dt
+    WANDER_TICK += dt
 
     display.finish_frame()
