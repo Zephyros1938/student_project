@@ -1,7 +1,7 @@
 import tsapp, tsappMod, math
 from tsappMod import Builtins as TSMConst
 
-display = tsappMod.Surface(width=3840, height=1600, background_color=(0, 0, 0))
+display = tsappMod.Surface(width=1280, height=720, background_color=(0, 0, 0))
 camera = tsappMod.Camera2D(0, 0)
 
 q = 32
@@ -45,13 +45,15 @@ p2.center_y = display.height / 2
 p.center_x = display.width / 2
 p.center_y = display.width / 4
 
-tl = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "EMPTY", (255, 255, 255), True)
-fps_meter = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "FPS_METER", (255, 255, 255))
-fps_meter.align = "right"
+player_info = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "EMPTY", (255, 255, 255))
+performance_info = tsappMod.TextLabel("CourierNew.ttf", 25, 0, 25, display.width, "FPS_METER", (255, 255, 255))
+camera_info = tsappMod.TextLabel("CourierNew.ttf", 25, 0, display.height - 25, display.width, "CAMERA_INFO", (255,255,255))
+performance_info.align = "right"
 display.framerate = -1
 
-display.add_object(tl)
-display.add_object(fps_meter)
+display.add_object(player_info)
+display.add_object(performance_info)
+display.add_object(camera_info)
 display.add_object(p2)
 display.add_object(p)
 
@@ -91,36 +93,15 @@ while display.is_running:
     if tsappMod.is_mouse_down(TSMConst.Mouse.M_RIGHT):
         p.rotate_to(mouse_pos)
 
-    # Update camera via key input
-    if tsapp.is_key_down(tsapp.K_UP):
-        camera.origin_y -= move_delta
-    if tsapp.is_key_down(tsapp.K_DOWN):
-        camera.origin_y += move_delta
-    if tsapp.is_key_down(tsapp.K_LEFT):
-        camera.origin_x -= move_delta
-    if tsapp.is_key_down(tsapp.K_RIGHT):
-        camera.origin_x += move_delta
-
-    # Pre-calculate camera boundaries based on display dimensions
-    half_height = display.height * 0.5
-    quarter_height = display.height * 0.25
-    half_width = display.width * 0.5
-    quarter_width = display.width * 0.25
-
-    # Adjust camera based on player position and speed
-    if p.center[1] - half_height + quarter_height < camera.origin_y:
-        camera.origin_y -= abs(p.y_speed) * dt
-    if p.center[1] - half_height - quarter_height > camera.origin_y:
-        camera.origin_y += abs(p.y_speed) * dt
-    if p.center[0] - half_width + quarter_width < camera.origin_x:
-        camera.origin_x -= abs(p.x_speed) * dt
-    if p.center[0] - half_width - quarter_width > camera.origin_x:
-        camera.origin_x += abs(p.x_speed) * dt
+    # Update camera position according to player
+    camera.origin_x = (p.center[0] - display.width / 2)
+    camera.origin_y = (p.center[1] - display.height / 2)
 
     # GUI update every 60 seconds (adjust threshold as needed)
     if GUI_UPDATE_TICK >= display.seconds_passed(seconds=60):
-        tl.text = f"X: {int(p.center_x)} Y: {int(p.center_y)} C: {(p.current_angle_rad / tsappMod.Math.tau) * 360}"
-        fps_meter.text = f"FPS: {display._clock.get_fps()}"
+        player_info.text = f"PLAYER\nPOS: {p.world_center} R: {(p.current_angle_rad / tsappMod.Math.tau) * 360}"
+        performance_info.text = f"FPS: {display._clock.get_fps()}"
+        camera_info.text = f"CAMERA\nPOS: {camera.origin}"
         GUI_UPDATE_TICK = 0
 
     # Deceleration logic every 60 seconds

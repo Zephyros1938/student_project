@@ -175,9 +175,9 @@ class PolygonalObject(tsapp.GraphicalObject):
         self._update_world_coords()
     
     def _update_world_coords(self):
-        cx, cy = self.world_center  # cache for efficiency
+        cx, cy = self.world_center   # cache for efficiency
         self._world_coord_list = [
-            (pt[0] + cx - self.local_center_x, pt[1] + cy - self.local_center_y)
+            ((pt[0] + cx - self.local_center_x), (pt[1] + cy - self.local_center_y))
             for pt in self.points
         ]
     
@@ -324,6 +324,13 @@ class Math:
     def magnitude(p1, p2):
         return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
     
+    @staticmethod
+    def zoom_at_center(point,center,zoom):
+        return (
+            zoom * point[0]+(1-zoom)*center[0],
+            zoom * point[1]+(1-zoom)*center[1],
+        )
+
     half_pi = math.pi*0.5
     tau = math.pi*2
 
