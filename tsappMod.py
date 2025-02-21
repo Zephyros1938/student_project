@@ -2,6 +2,7 @@
     MADE BY ZEPHYROS1938 (zephyros@zephyros1938.org)
     FREE TO USE, WITH CREDIT.
 """
+
 import math
 
 import pygame
@@ -42,30 +43,22 @@ class Surface(tsapp.GraphicsWindow):
             print("Could not set display name.")
     
     def finish_frame(self):
-        """
-        Intended to be called once a frame while GraphicsWindow.is_running
-        Performs all the most common end-of-frame actions, including:
-         - tracking time
-         - updating the position and image of graphical objects
-         - removing destroyed objects
-         - flipping the screen
-         - checking for the "QUIT" event
-        """
-
-        # Track timing
+        # Track timing and cache delta time
         self._clock.tick(self.framerate)
+        dt = self._clock.get_time()  # Cache delta time
 
         # Draw frame
         self._surface.fill(self.background_color)
+        new_draw_list = []
         for drawable_item in self._draw_list:
-            if not drawable_item.destroyed:
-                drawable_item._draw()
-            else:
-                self._draw_list.remove(drawable_item)
+            if drawable_item.destroyed:
                 drawable_item.destroy()
-                continue
-            drawable_item._update(self._clock.get_time())
-                
+            else:
+                drawable_item._draw()
+                drawable_item._update(dt)
+                new_draw_list.append(drawable_item)
+        self._draw_list = new_draw_list
+
         pygame.display.flip()
 
         # Capture events from the current frame
@@ -75,27 +68,29 @@ class Surface(tsapp.GraphicsWindow):
         # Check for QUIT
         if any(event.type == pygame.QUIT for event in _current_frame_event_list):
             self.is_running = False
+
     
     def seconds_passed(self, seconds):
         return self.deltatime * seconds
     
-    
     @property
     def deltatime(self):
-        return self._clock.get_time() / 1000
+        return self._clock.get_time() * 0.001
     @property
     def aspect_ratio(self):
         return (self.width / self.height)
 
-def _get_window():
-    return _active_window
-
 class Camera2D:
-    def __init__(self,origin_x = 0, origin_y = 0):
+    def __init__(self,origin_x = 0, origin_y = 0, zoom = 1.0):
         self.origin_x = origin_x
         self.origin_y = origin_y
+        self.zoom = zoom
         global _active_Camera2D
         _active_Camera2D = self
+
+    def world_to_screen(self, point):
+        return((point[0]-self.origin_x)*self.zoom,
+               (point[1]-self.origin_y)*self.zoom)
 
     @property
     def origin(self):
@@ -126,8 +121,7 @@ class PolygonalObject(tsapp.GraphicalObject):
     
     def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, show_center=False, show_speed=False, show_direction = False, attraction_radius = 200, show_attraction = False):
         super().__init__()
-        if not (isinstance(points, list) and all(isinstance(item, list) for item in points)):   # checks if the 'points' variable is a list, 
-                                                                                                # and that it contains only tuples
+        if not (isinstance(points, list) and all(isinstance(item, list) for item in points)):
             raise TypeError("Points must be a list of 2x length lists.")
         self.points = [v for v in points]
         self.local_center_x = sum(v[0] for v in self.points) / len(points)
@@ -146,26 +140,28 @@ class PolygonalObject(tsapp.GraphicalObject):
         self._update_world_coords()
     
     def _draw(self):
-        surface = _active_window._surface
+        surface = _active_window._surface # cache for efficiency
+        world_center_x, world_center_y = self.world_center # cache for efficiency
         if(self.visible):
             pygame.draw.polygon(surface, self.color, self._world_coord_list, self.linewidth)
         if(self.show_center):
             pygame.draw.circle(surface, self.color_inverse, self.world_center, 4)
         if(self.show_speed):
-            pygame.draw.line(surface=surface, color=(255,255,0), start_pos=self.world_center, end_pos=(self.world_center[0] + self.x_speed,self.world_center[1] + self.y_speed), width=2)
+            pygame.draw.line(surface=surface, color=(0,255,0), start_pos=self.world_center, end_pos=(world_center_x + self.x_speed,world_center_y + self.y_speed), width=2)
         if(self.show_direction):
+            world_center_forward = (world_center_x-250, world_center_y)
             pygame.draw.line(
                 surface=surface,
-                color=(0,255,255),
+                color=(0,0,255),
                 start_pos=self.world_center,
-                end_pos=Math.rotate_point_rad((self.world_center[0]-250, self.world_center[1]), self.world_center, self.current_angle_rad),
+                end_pos=Math.rotate_point_rad(world_center_forward, self.world_center, self.current_angle_rad),
                 width=2
             )
             pygame.draw.line(
                 surface=surface,
-                color=(0,255,0),
+                color=(255,0,0),
                 start_pos=self.world_center,
-                end_pos=Math.rotate_point_rad((self.world_center[0]-250, self.world_center[1]), self.world_center, self.right),
+                end_pos=Math.rotate_point_rad(world_center_forward, self.world_center, self.right),
                 width=2
             )
         if(self.show_attraction):
@@ -174,18 +170,26 @@ class PolygonalObject(tsapp.GraphicalObject):
 
     def _update(self, delta_time):
         x_speed, y_speed = self.speed
-        self.center_x += (x_speed / 1000) * delta_time
-        self.center_y += (y_speed / 1000) * delta_time
+        self.center_x += (x_speed * 0.001) * delta_time
+        self.center_y += (y_speed * 0.001) * delta_time
         self._update_world_coords()
     
     def _update_world_coords(self):
-        for i in range(len(self.points)):
-            self._world_coord_list[i] = (self.points[i][0] + self.world_center[0] - self.local_center_x, self.points[i][1] + self.world_center[1] - self.local_center_y)
-        #print(self.world_coord_list)
+        cx, cy = self.world_center  # cache for efficiency
+        self._world_coord_list = [
+            (pt[0] + cx - self.local_center_x, pt[1] + cy - self.local_center_y)
+            for pt in self.points
+        ]
     
     def rotate_rad(self, radians):
-        for i in range(len(self.points)):
-            self.points[i] = Math.rotate_point_rad_compact(self.points[i], self.local_center, radians - self.current_angle_rad)
+        r = radians - self.current_angle_rad
+        self.points = [
+            (Math.rotate_point_rad_compact(pt, self.local_center, radians - self.current_angle_rad))
+            for pt in self.points
+        ]
+    #   ! DONT USE THIS, IT IS INNEFICIENT !
+    #   for i in range(len(self.points)):
+    #       self.points[i] = Math.rotate_point_rad_compact(self.points[i], self.local_center, radians - self.current_angle_rad)
         self.current_angle_rad = radians
     
     def rotate_to(self, target):
@@ -198,26 +202,33 @@ class PolygonalObject(tsapp.GraphicalObject):
         self.y_speed -= sy * speed
     
     def move_forward(self, speed):
-        sx, sy = Math.vector_from_rad(self.current_angle_rad)
-        self.x_speed -= sx * speed
-        self.y_speed -= sy * speed
+        self.x_speed -= self.forward_cos * speed
+        self.y_speed -= self.forward_sin * speed
     
     def move_backward(self, speed):
-        sx, sy = Math.vector_from_rad(self.current_angle_rad)
-        self.x_speed += sx * speed
-        self.y_speed += sy * speed
+        self.x_speed += self.forward_cos * speed
+        self.y_speed += self.forward_sin * speed
     
     def move_right(self, speed):
-        sx, sy = Math.vector_from_rad(self.right)
-        self.x_speed -= sx * speed
-        self.y_speed -= sy * speed
+        self.x_speed -= self.right_cos * speed
+        self.y_speed -= self.right_sin * speed
     
     def move_left(self, speed):
-        sx, sy = Math.vector_from_rad(self.right)
-        self.x_speed += sx * speed
-        self.y_speed += sy * speed
+        self.x_speed += self.right_cos * speed
+        self.y_speed += self.right_sin * speed
 
-    
+    @property
+    def forward_sin(self):
+        return math.sin(self.current_angle_rad)
+    @property
+    def forward_cos(self):
+        return math.cos(self.current_angle_rad)
+    @property
+    def right_sin(self):
+        return math.sin(self.right)
+    @property
+    def right_cos(self):
+        return math.cos(self.right)
     @property
     def is_colliding_polygon(self, other_polygon):
         pass
@@ -283,6 +294,7 @@ class Math:
     @staticmethod
     def get_direction_towards_point(current,target):
         return math.atan2(target[1] - current[1], target[0] - current[0])
+    
     @staticmethod
     def rotate_point_rad(p1, pivot, radians):
         s = math.sin(radians)
@@ -312,7 +324,8 @@ class Math:
     def magnitude(p1, p2):
         return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
     
-    half_pi = math.pi/2
+    half_pi = math.pi*0.5
+    tau = math.pi*2
 
 def is_mouse_down(mouse_button):
     return pygame.mouse.get_pressed()[mouse_button]
