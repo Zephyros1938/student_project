@@ -105,11 +105,13 @@ class PolygonalObjectDebugConfig:
         self.DEBUG_ATTRACTION = DEBUG_ATTRACTION
 
 class PolygonalObjectConfig:
-    def __init(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=[255,255,255], linewidth=0, attraction_radius=200, deceleration_factor = 0.75):
+    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, attraction_radius=200, deceleration_factor = 0.75):
+        if not (isinstance(points, list) and all(isinstance(item, list) for item in points)):
+            raise TypeError("Points must be a list of 2x length lists.")
         self.points = points
         self.center = center
         self.color = color
-        self.linewidth = linewidth,
+        self.linewidth = linewidth
         self.attraction_radius = attraction_radius
         self.deceleration_factor = deceleration_factor
 
@@ -135,28 +137,26 @@ class PolygonalObject(tsapp.GraphicalObject):
     _world_coord_list = []
     current_angle_rad = 0
     
-    def __init__(self, points=[[0,0],[1,0],[0,1]], center=[0,0], color=(255,255,255), linewidth=0, attraction_radius = 200, debug_config = PolygonalObjectDebugConfig()):
+    def __init__(self, config = PolygonalObjectConfig(), debug_config = PolygonalObjectDebugConfig()):
         super().__init__()
-        if not (isinstance(points, list) and all(isinstance(item, list) for item in points)):
-            raise TypeError("Points must be a list of 2x length lists.")
-        self.points = [v for v in points]
-        self.local_center_x = sum(v[0] for v in self.points) / len(points)
-        self.local_center_y = sum(v[1] for v in self.points) / len(points)
-        self.color = color
-        self.color_inverse = (255-color[0], 255-color[1], 255-color[2])
-        self.linewidth = linewidth
-        self.center_x = center[0]
-        self.center_y = center[1]
+        self.config = config
+        self.points = self.config.points
         self.debug_config = debug_config
-        self.attraction_radius = attraction_radius
-        self._world_coord_list = [(0,0)] * len(points)
+        self.local_center_x = sum(v[0] for v in self.points) / len(self.points)
+        self.local_center_y = sum(v[1] for v in self.points) / len(self.points)
+        self.color_inverse = (255-self.config.color[0], 255-self.config.color[1], 255-self.config.color[2])
+        self.center_x = self.config.center[0]
+        self.center_y = self.config.center[1]
         self._update_world_coords()
     
     def _draw(self):
         surface = _active_window._surface # cache for efficiency
         world_center_x, world_center_y = self.world_center # cache for efficiency
+        cfg = self.config
+        #print(self._world_coord_list)
+        #print(self.config.color, self.config.linewidth)
         if(self.visible):
-            pygame.draw.polygon(surface, self.color, self._world_coord_list, self.linewidth)
+            pygame.draw.polygon(surface, cfg.color, self._world_coord_list, cfg.linewidth)
         if(self.debug_config.DEBUG_CENTER):
             pygame.draw.circle(surface, self.color_inverse, self.world_center, 4)
         if(self.debug_config.DEBUG_SPEED):
@@ -178,7 +178,7 @@ class PolygonalObject(tsapp.GraphicalObject):
                 width=2
             )
         if(self.debug_config.DEBUG_ATTRACTION):
-            pygame.draw.circle(surface=surface, color=(255,255,255), center=self.world_center, radius=self.attraction_radius, width=2)
+            pygame.draw.circle(surface=surface, color=(255,255,255), center=self.world_center, radius=self.config.attraction_radius, width=2)
         
 
     def _update(self, delta_time):
@@ -190,12 +190,13 @@ class PolygonalObject(tsapp.GraphicalObject):
     def _update_world_coords(self):
         cx, cy = self.world_center   # cache for efficiency
         self._world_coord_list = [
-            ((pt[0] + cx - self.local_center_x), (pt[1] + cy - self.local_center_y))
+            (pt[0] + cx - self.local_center_x, pt[1] + cy - self.local_center_y)
             for pt in self.points
         ]
     
     def rotate_rad(self, radians):
         r = radians - self.current_angle_rad
+        cfg = self.config
         self.points = [
             (Math.rotate_point_rad_compact(pt, self.local_center, radians - self.current_angle_rad))
             for pt in self.points

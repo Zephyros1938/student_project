@@ -1,4 +1,7 @@
-import tsapp, tsappMod, math, random
+import tsapp
+import tsappMod
+import math
+import random
 from tsappMod import Builtins as TSMConst
 
 display = tsappMod.Surface(width=1280, height=720, background_color=(0, 0, 0))
@@ -9,27 +12,31 @@ l = q * display.aspect_ratio
 l2 = l / 2
 
 p = tsappMod.PolygonalObject(
-    points=[
-        [l2, -l2],
-        [-((l * (math.sqrt(3) / 10)) - l2), 0],
-        [l2, l2],
-        [-((l * (math.sqrt(3) / 2)) - l2), 0]
-    ],
-    color=(255, 0, 255),
-    linewidth=0
+    config=tsappMod.PolygonalObjectConfig(
+        points=[
+            [l2, -l2],
+            [-((l * (math.sqrt(3) / 10)) - l2), 0],
+            [l2, l2],
+            [-((l * (math.sqrt(3) / 2)) - l2), 0]
+        ],
+        color=(255, 0, 255),
+        linewidth=0
+    )
 )
 
 p2 = tsappMod.PolygonalObject(
-    points=[
-        [-l2, -l2],
-        [l2, -l2],
-        [l2, l2],
-        [-l2, l2]
-    ],
-    color=(128, 0, 128),
-    linewidth=0,
-    center=[display.width, display.height],
-    attraction_radius=100 * display.aspect_ratio
+    config=tsappMod.PolygonalObjectConfig(
+        points=[
+            [-l2, -l2],
+            [l2, -l2],
+            [l2, l2],
+            [-l2, l2]
+        ],
+        color=(128, 0, 128),
+        linewidth=0,
+        center=[display.width, display.height],
+        attraction_radius=100 * display.aspect_ratio
+    )
 )
 
 # Set initial centers
@@ -111,7 +118,7 @@ while display.is_running:
                 p.x_speed, p.y_speed = 0, 0
 
         # Decelerate p2 if outside its attraction radius
-        if p2.speed != (0, 0) and tsappMod.Math.magnitude(p2.world_center, p.world_center) >= p2.attraction_radius:
+        if p2.speed != (0, 0) and tsappMod.Math.magnitude(p2.world_center, p.world_center) >= p2.config.attraction_radius:
             p2.x_speed *= 0.75
             p2.y_speed *= 0.75
             if abs(p2.x_speed) <= 1 and abs(p2.y_speed) <= 1:
@@ -120,7 +127,7 @@ while display.is_running:
         DECELERATION_TICK = 0
 
     # p2 moves toward p if within attraction radius
-    if tsappMod.Math.magnitude(p2.world_center, p.world_center) < p2.attraction_radius:
+    if tsappMod.Math.magnitude(p2.world_center, p.world_center) < p2.config.attraction_radius:
         p2.rotate_to(p.world_center)
         p2.move_forward(P2_MOVE_SPEED * dt)
     elif WANDER_TICK >= display.seconds_passed(240):
