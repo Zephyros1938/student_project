@@ -7,7 +7,7 @@ import math
 
 import pygame
 
-import tsapp
+import tsapp as tsapp
 
 # Keys
 try:
@@ -160,7 +160,7 @@ class PolygonalObject(tsapp.GraphicalObject):
         if(self.debug_config.DEBUG_CENTER):
             pygame.draw.circle(surface, self.color_inverse, self.world_center, 4)
         if(self.debug_config.DEBUG_SPEED):
-            pygame.draw.line(surface=surface, color=(0,255,0), start_pos=self.world_center, end_pos=(world_center_x + self.x_speed,world_center_y + self.y_speed), width=2)
+            pygame.draw.line(surface=surface, color=(0,255,0), start_pos=self.world_center, end_pos=(world_center_x + self.x_speed,world_center_y + self.y_speed), width=3)
         if(self.debug_config.DEBUG_DIRECTION):
             world_center_forward = (world_center_x-250, world_center_y)
             pygame.draw.line(
