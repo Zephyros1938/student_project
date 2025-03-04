@@ -9,12 +9,6 @@ import pygame
 
 import tsapp as tsapp
 
-# Keys
-try:
-    if(not pygame.get_init()): pygame.init()
-except:
-    print("Could not get pygame initialization state.")
-
 _active_window = None
 _active_Camera2D = None
 
