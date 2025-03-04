@@ -28,8 +28,8 @@ This project provides additional functionality to Python and Pygame, enhancing t
 Here's a basic example of how to create a window and add a polygonal object:
 
 ```python
-import src.zephyros1938.tsapp as tsapp
-import src.zephyros1938.tsappMod as tsappMod
+import zephyros1938.tsapp as tsapp
+import zephyros1938.tsappMod as tsappMod
 
 # Create a window
 window = tsappMod.Surface(width=800, height=600, background_color=tsapp.WHITE, title="Example Window")
