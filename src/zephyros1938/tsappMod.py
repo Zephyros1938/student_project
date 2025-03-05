@@ -7,7 +7,7 @@ import math
 
 import pygame
 
-import tsapp as tsapp
+import zephyros1938.tsapp as tsapp
 
 _active_window = None
 _active_Camera2D = None
