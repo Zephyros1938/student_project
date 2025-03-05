@@ -179,7 +179,7 @@ class GraphicsWindow(object):
     def __init__(self, width=1018, height=573, background_color=WHITE):
 
         # Private variables
-        self._surface = pygame.display.set_mode([width, height], pygame.OPENGL)
+        self._surface = pygame.display.set_mode([width, height], pygame.OPENGL | pygame.DOUBLEBUF)
         self._width = width
         self._height = height
 
