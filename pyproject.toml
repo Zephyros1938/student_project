@@ -1,6 +1,6 @@
 [project]
 name = "tsappWrapper-zephyros1938"
-version = "0.0.4.1"
+version = "0.0.5"
 authors = [
   { name="Author", email="zephyros@zephyros1938.org" },
 ]
